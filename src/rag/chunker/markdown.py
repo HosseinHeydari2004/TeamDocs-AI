@@ -8,7 +8,7 @@ from llama_index.core.node_parser import MarkdownNodeParser
 
 class BaseChunker(ABC):
     @abstractmethod
-    def chunk(self, doc: list[Document]) -> list[Document]:
+    def chunk(self, docs: list[Document]) -> list[Document]:
         raise NotImplementedError
 
 
@@ -24,9 +24,9 @@ class MarkdownChunker(BaseChunker):
             keep_separator=True,
         )
 
-    def chunk(self, doc: list[Document]) -> list[Document]:
+    def chunk(self, docs: list[Document]) -> list[Document]:
         out: list[Document] = []
-        for d in doc:
+        for d in docs:
             out.extend(self._chunk_one(d))
         return out
 
