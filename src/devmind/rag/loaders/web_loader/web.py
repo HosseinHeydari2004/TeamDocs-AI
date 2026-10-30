@@ -1,11 +1,11 @@
 import os
 
-os.environ.setdefault("USER_AGENT", "TeamDocs-AI/1.0")  # قبل از import لودر لنگ‌چین
+os.environ.setdefault("USER_AGENT", "TeamDocs-AI/1.0")  # ظ‚ط¨ظ„ ط§ط² import ظ„ظˆط¯ط± ظ„ظ†ع¯â€Œع†غŒظ†
 
 import bs4
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_core.documents import Document
-from rag.loaders.base import BaseLoader
+from devmind.rag.loaders.base import BaseLoader
 
 
 class WebLoader(BaseLoader):
@@ -35,3 +35,4 @@ class WebLoader(BaseLoader):
             docs.extend(result)
 
         return docs
+

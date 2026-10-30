@@ -2,7 +2,7 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders import UnstructuredWordDocumentLoader
 from pathlib import Path
 
-from rag.loaders.base import BaseLoader
+from devmind.rag.loaders.base import BaseLoader
 
 
 class DocsLoader(BaseLoader):
@@ -16,3 +16,4 @@ class DocsLoader(BaseLoader):
             language="en",
         )
         return loader.load()
+

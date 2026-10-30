@@ -1,11 +1,11 @@
 from pathlib import Path
 
 from langchain_community.document_loaders import TextLoader as LCTextLoader
-from rag.loaders.base import BaseLoader
+from devmind.rag.loaders.base import BaseLoader
 
-class JavaCodeLoader(BaseLoader):
-    EXTENSIONS = {".java"}
-    SKIP_DIRS = {".git", "env", "venv", ".venv", "build", "target", "out", ".gradle", ".idea"}
+class CSharpCodeLoader(BaseLoader):
+    EXTENSIONS = {".cs"}
+    SKIP_DIRS = {".git", "env", "venv", ".venv", "bin", "obj", ".vs", ".idea"}
 
     def load(self, path):
         path = Path(path)
@@ -19,8 +19,9 @@ class JavaCodeLoader(BaseLoader):
             try:
                 loader = LCTextLoader(str(file), encoding="utf-8", autodetect_encoding=True)
                 for doc in loader.load():
-                    doc.metadata["language"] = "java"
+                    doc.metadata["language"] = "csharp"
                     docs.append(doc)
             except Exception as e:
                 print(f"skip {file.name}: {e}")
         return docs
+

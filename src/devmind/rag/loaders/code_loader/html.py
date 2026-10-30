@@ -1,11 +1,11 @@
 from pathlib import Path
 
-from langchain_community.document_loaders import TextLoader as LCTextLoader
-from rag.loaders.base import BaseLoader
+from langchain_community.document_loaders import BSHTMLLoader as LCBSHTMLLoader
+from devmind.rag.loaders.base import BaseLoader
 
-class TypeScriptCodeLoader(BaseLoader):
-    EXTENSIONS = {".ts", ".tsx"}
-    SKIP_DIRS = {".git", "env", "venv", ".venv", "node_modules", "dist", "build", ".next", ".idea"}
+class HTMLFileLoader(BaseLoader):
+    EXTENSIONS = {".html", ".htm"}
+    SKIP_DIRS = {".git", "env", "venv", ".venv", "node_modules", "build", "dist", ".idea"}
 
     def load(self, path):
         path = Path(path)
@@ -17,9 +17,10 @@ class TypeScriptCodeLoader(BaseLoader):
         docs = []
         for file in files:
             try:
-                loader = LCTextLoader(str(file), encoding="utf-8", autodetect_encoding=True)
+                loader = LCBSHTMLLoader(str(file), open_encoding="utf-8")
                 for doc in loader.load():
-                    doc.metadata["language"] = "ts"
+                    doc.metadata["language"] = "html"
+                    doc.metadata["file_name"] = file.name
                     docs.append(doc)
             except Exception as e:
                 print(f"skip {file.name}: {e}")

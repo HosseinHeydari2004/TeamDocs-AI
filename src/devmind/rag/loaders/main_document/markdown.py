@@ -1,4 +1,4 @@
-from rag.loaders.base import BaseLoader
+from devmind.rag.loaders.base import BaseLoader
 from pathlib import Path
 from langchain_community.document_loaders import UnstructuredMarkdownLoader
 from langchain_core.documents import Document
@@ -18,3 +18,4 @@ class MarkdownLoader(BaseLoader):
             },
         )
         return loader.load()
+

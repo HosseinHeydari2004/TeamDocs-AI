@@ -1,7 +1,7 @@
 from langchain_core.documents import Document
 from langchain_community.document_loaders import UnstructuredPowerPointLoader
 from pathlib import Path
-from rag.loaders.base import BaseLoader
+from devmind.rag.loaders.base import BaseLoader
 
 
 class PPTXLoader(BaseLoader):
@@ -14,3 +14,4 @@ class PPTXLoader(BaseLoader):
             languages=["eng"],
             include_page_breaks=True
         )
+

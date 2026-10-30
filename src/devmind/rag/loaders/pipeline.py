@@ -2,7 +2,6 @@
 
 import os
 
-from ipython_genutils import path
 
 os.environ.setdefault("USER_AGENT", "TeamDocs-AI/1.0")  # must be set before WebBaseLoader is imported
 
@@ -14,8 +13,8 @@ from typing import Iterable
 
 from langchain_core.documents import Document
 
-from rag.loaders import DocsLoader, PDFLoader, MarkdownLoader, TXTLoader, PPTXLoader
-from rag.loaders.web_loader.web import WebLoader
+from devmind.rag.loaders import DocsLoader, PDFLoader, MarkdownLoader, TXTLoader, PPTXLoader
+from devmind.rag.loaders.web_loader.web import WebLoader
 
 from .code_loader import (
     SQLCodeLoader,
@@ -487,3 +486,4 @@ class LoaderPipeline:
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
         return all_docs
+
