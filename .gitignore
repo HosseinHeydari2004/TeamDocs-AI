@@ -5,3 +5,4 @@ env/
 *.zip
 *.rar
 .env
+vector_database/
