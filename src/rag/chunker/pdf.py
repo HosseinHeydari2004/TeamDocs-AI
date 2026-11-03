@@ -11,13 +11,13 @@ class PDFChunker(BaseChunker):
             separators=["\n\n", "\n", ". ", " ", ""]
         )
 
-    def chunk(self, doc: list[Document]) -> list[Document]:
+    def chunk(self, docs: list[Document]) -> list[Document]:
         chunks: list[Document] = []
-        for page_doc in doc:
+        for page_doc in docs:
             text = page_doc.page_content.strip()
             if not text:
                 continue
-            page_metadata = page_doc.metadata
+            page_metadata = dict(page_doc.metadata)
             page_metadata.setdefault("element_type", "text")
 
             page_document = Document(
@@ -25,8 +25,6 @@ class PDFChunker(BaseChunker):
                 metadata=page_metadata,
             )
             page_chunks = self._splitter.split_documents([page_document])
-            for index, chunk in enumerate(page_chunks):
-                chunk.metadata["chunk_index"] = index
 
             chunks.extend(page_chunks)
         return chunks

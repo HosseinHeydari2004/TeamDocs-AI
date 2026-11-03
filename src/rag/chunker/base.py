@@ -3,5 +3,5 @@ from abc import ABC, abstractmethod
 
 class BaseChunker(ABC):
     @abstractmethod
-    def chunk(self, doc: list[Document])-> list[Document]:
+    def chunk(self, docs: list[Document])-> list[Document]:
         raise NotImplementedError

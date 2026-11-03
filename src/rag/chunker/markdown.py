@@ -21,9 +21,9 @@ class MarkdownChunker(BaseChunker):
             chunk_overlap=120
         )
 
-    def chunk(self, doc: list[Document]) -> list[Document]:
+    def chunk(self, docs: list[Document]) -> list[Document]:
         result = []
-        for d in doc:
+        for d in docs:
             header_docs = self._header_splitter.split_text(d.page_content)
             for hd in header_docs:
                 hd.metadata = {**d.metadata, **hd.metadata}

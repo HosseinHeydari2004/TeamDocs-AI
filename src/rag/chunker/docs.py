@@ -12,7 +12,7 @@ class DocsChunker(BaseChunker):
             chunk_overlap=overlap,
         )
 
-    def chunk(self, doc: list[Document]) -> list[Document]:
+    def chunk(self, docs: list[Document]) -> list[Document]:
         chunks: list[Document] = []
         buffer: list[Document] = []
         buffer_size: int = 0
@@ -42,7 +42,7 @@ class DocsChunker(BaseChunker):
             buffer = []
             buffer_size = 0
 
-        for element in doc:
+        for element in docs:
             text = element.page_content.strip()
             if not text:
                 continue
