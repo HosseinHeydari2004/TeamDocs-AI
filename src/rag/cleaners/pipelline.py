@@ -34,13 +34,13 @@ class CleanerPipeline(BaseCleaner):
         ".txt",
     }
 
-    def clean(self, documents: list[Document]) -> list[Document]:
+    def clean(self, cls,documents: list[Document]) -> list[Document]:
         for document in documents:
             extension = self._get_extension(metadata=document.metadata.copy())
-            if extension in self._SUPPORTED_EXTENSIONS_DOCUMENT:
+            if extension in cls._SUPPORTED_EXTENSIONS_DOCUMENT:
                 cleaner = DocumentCleaner()
                 return cleaner.clean(documents=document)
-            elif extension in self._SUPPORTED_EXTENSIONS_CODE:
+            elif extension in cls._SUPPORTED_EXTENSIONS_CODE:
                 cleaner = CodeDocumentCleaner()
                 return cleaner.clean(documents=document)
             elif self._is_url(source=document.metadata["source"]):
