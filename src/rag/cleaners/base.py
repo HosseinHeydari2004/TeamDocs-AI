@@ -5,5 +5,5 @@ from abc import ABC, abstractmethod
 class BaseCleaner(ABC):
 
     @abstractmethod
-    def clean(self, text: str) -> list[Document]:
+    def clean(self, documents: list[Document]) -> list[Document]:
         raise NotImplementedError
