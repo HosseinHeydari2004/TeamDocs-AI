@@ -7,7 +7,7 @@ from .base import BaseChunker
 
 
 class MarkdownChunker(BaseChunker):
-    def __init__(self, ):
+    def __init__(self, **kwargs):
         self._header_splitter = MarkdownHeaderTextSplitter(
             headers_to_split_on=[
                 ("#", "h1"),

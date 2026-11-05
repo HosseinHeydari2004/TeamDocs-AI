@@ -33,21 +33,26 @@ class CleanerPipeline(BaseCleaner):
         ".markdown",
         ".txt",
     }
+    _SUPPORTED_EXTENSIONS: set[str] = (
+            _SUPPORTED_EXTENSIONS_CODE
+            | _SUPPORTED_EXTENSIONS_DOCUMENT
+    )
 
-    def clean(self, cls,documents: list[Document]) -> list[Document]:
+    def clean(self, documents: list[Document]) -> list[Document]:
+        docs:list[Document] = []
         for document in documents:
             extension = self._get_extension(metadata=document.metadata.copy())
-            if extension in cls._SUPPORTED_EXTENSIONS_DOCUMENT:
+            if extension in self._SUPPORTED_EXTENSIONS_DOCUMENT:
                 cleaner = DocumentCleaner()
-                return cleaner.clean(documents=document)
-            elif extension in cls._SUPPORTED_EXTENSIONS_CODE:
+            elif extension in self._SUPPORTED_EXTENSIONS_CODE:
                 cleaner = CodeDocumentCleaner()
-                return cleaner.clean(documents=document)
             elif self._is_url(source=document.metadata["source"]):
                 cleaner = WebDocumentCleaner()
-                return cleaner.clean(documents=document)
+            else:
+                raise ValueError(f"Unsupported document type {document.metadata.type}")
+            docs.extend(cleaner.clean(documents=[document]))
+        return docs
 
-        return None
 
     @classmethod
     def _get_extension(cls, metadata: dict) -> str:
@@ -59,7 +64,7 @@ class CleanerPipeline(BaseCleaner):
             if not file_type.startswith("."):
                 file_type = f".{file_type}"
 
-            if file_type in cls.SUPPORTED_EXTENSIONS:
+            if file_type in cls._SUPPORTED_EXTENSIONS:
                 return file_type
 
         source = str(metadata.get("source", "")).strip()
@@ -71,7 +76,7 @@ class CleanerPipeline(BaseCleaner):
             if not extension:
                 extension = PurePosixPath(source).suffix.lower()
 
-            if extension in cls.SUPPORTED_EXTENSIONS:
+            if extension in cls._SUPPORTED_EXTENSIONS:
                 return extension
 
         raise ValueError(
@@ -79,7 +84,7 @@ class CleanerPipeline(BaseCleaner):
             "from document metadata."
         )
 
-    def _is_url(self, source) -> bool:
+    def _is_url(self, source:object| str) -> bool:
         """
         Return whether ``source`` is an HTTP or HTTPS URL string.
 

@@ -1,8 +1,9 @@
 from __future__ import annotations
-
+from dotenv import load_dotenv
 import logging
 from pathlib import Path
 from typing import Iterable
+from langchain.chat_models import init_chat_model
 
 from langchain_core.documents import Document
 
@@ -11,6 +12,7 @@ from src.rag.cleaners.pipelline import CleanerPipeline
 from src.rag.chunker.pipeline import ChunkerPipeline
 from src.rag.metadata_extraction.extractor import MetadataExtractor
 
+load_dotenv()
 logger = logging.getLogger(__name__)
 
 
@@ -30,7 +32,16 @@ class PreprocessingPipeline:
     ) -> None:
         self.loader = loader or LoaderPipeline()
         self.cleaner = cleaner or CleanerPipeline()
-        self.metadata_extractor = metadata_extractor
+        self._model = init_chat_model(
+            model="auto",
+            model_provider="openrouter"
+        )
+
+        self.metadata_extractor = (
+            metadata_extractor
+            if metadata_extractor is not None
+            else MetadataExtractor(llm=self._model)
+        )
         self.chunker = chunker or ChunkerPipeline(
             chunk_size=chunk_size,
             overlap=overlap,
@@ -39,15 +50,16 @@ class PreprocessingPipeline:
 
     def run(self, source: str | Path | Iterable[str | Path]) -> list[Document]:
         """Run all preprocessing stages and return chunked Documents."""
-        documents = self.load(source)
+        documents = self.load(source=source)
+        # return documents
         documents = self.clean(documents)
 
         if not documents:
             logger.warning("No documents remain after loading and cleaning.")
             return []
 
-        documents = self.extract_metadata(documents)
-        chunks = self.chunk(documents)
+        documents = self.extract_metadata(documents=documents)
+        chunks = self.chunk(documents=documents)
 
         logger.info(
             "Preprocessing completed: documents=%d, chunks=%d",
@@ -62,7 +74,7 @@ class PreprocessingPipeline:
         return documents
 
     def clean(self, documents: list[Document]) -> list[Document]:
-        cleaned = self.cleaner.clean(documents)
+        cleaned = self.cleaner.clean(documents=documents)
         logger.info("Cleaned documents: %d -> %d", len(documents), len(cleaned))
         return cleaned
 

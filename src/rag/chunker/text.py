@@ -4,7 +4,7 @@ from .base import BaseChunker
 
 
 class TXTChunker(BaseChunker):
-    def __init(self, chunk_size: int = 1200, overlap: int = 200):
+    def __init__(self, chunk_size: int = 1200, overlap: int = 200):
         self._splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
             chunk_overlap=overlap,
