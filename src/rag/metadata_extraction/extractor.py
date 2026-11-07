@@ -64,7 +64,7 @@ class MetadataExtractor:
             self,
             llm: BaseChatModel,
             *,
-            max_chars: int = 12_000,
+            max_chars: int = 5000,
             max_retries: int = 2,
             retry_delay: float = 1.0,
             overwrite_existing: bool = False,

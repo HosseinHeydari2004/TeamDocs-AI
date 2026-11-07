@@ -1,9 +1,10 @@
 from __future__ import annotations
+import os
 from dotenv import load_dotenv
 import logging
 from pathlib import Path
 from typing import Iterable
-from langchain.chat_models import init_chat_model
+from langchain_openai import ChatOpenAI
 
 from langchain_core.documents import Document
 
@@ -11,7 +12,6 @@ from src.rag.loaders.pipeline import LoaderPipeline
 from src.rag.cleaners.pipelline import CleanerPipeline
 from src.rag.chunker.pipeline import ChunkerPipeline
 from src.rag.metadata_extraction.extractor import MetadataExtractor
-
 load_dotenv()
 logger = logging.getLogger(__name__)
 
@@ -32,9 +32,10 @@ class PreprocessingPipeline:
     ) -> None:
         self.loader = loader or LoaderPipeline()
         self.cleaner = cleaner or CleanerPipeline()
-        self._model = init_chat_model(
-            model="auto",
-            model_provider="openrouter"
+        self._model = ChatOpenAI(
+            model="deepseek-flash",
+            api_key=os.getenv("DEEPSEEK_API_KEY"),
+            base_url="https://api.deepseek.com"
         )
 
         self.metadata_extractor = (
