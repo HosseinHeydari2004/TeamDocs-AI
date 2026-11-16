@@ -18,6 +18,6 @@ def get_chat_model() -> ChatOpenRouter:
         model=OPENROUTER_MODEL,
         api_key=OPENROUTER_API_KEY,
         temperature=0,
-        max_tokens=512,
+        max_tokens=2048,
         max_retries=2,
     )

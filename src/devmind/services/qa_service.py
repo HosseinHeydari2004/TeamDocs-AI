@@ -1,9 +1,13 @@
 
 import asyncio
+import hashlib
 import logging
+import shutil
+from pathlib import Path
 
 from devmind.agents.repo_qa import RepoQA
 from devmind.github.tools import GitHubTools
+from devmind.github.repository_analyzer import RepositoryAnalyzer
 from devmind.llm import get_chat_model
 from src.rag.rag_pipeline import RagPipeline
 
@@ -11,9 +15,15 @@ logger = logging.getLogger(__name__)
 
 
 class QAService:
+    REPOSITORY_CACHE = (
+        Path.home() / ".teamdocs-ai" / "repositories"
+    )
+
     def __init__(self):
-        self.rag = RagPipeline()
         self.repo_qa = RepoQA(get_chat_model())
+
+        self.rag_pipelines: dict[str, RagPipeline] = {}
+        self.repo_locks: dict[str, asyncio.Lock] = {}
 
         try:
             self.github = GitHubTools()
@@ -21,117 +31,245 @@ class QAService:
             logger.exception("GitHub MCP configuration failed")
             self.github = None
 
-    async def answer(self, question: str, owner: str, repo: str):
-        rag_context = ""
-        github_context = ""
-        warnings = []
+    @staticmethod
+    def _repository_key(owner: str, repo: str) -> str:
+        value = f"{owner.lower()}/{repo.lower()}"
+        return hashlib.sha256(
+            value.encode("utf-8")
+        ).hexdigest()[:20]
 
-        # 1. RAG retrieval
-        try:
-            result = await asyncio.to_thread(
-                self.rag.run_pipeline,
-                question,
+    def _get_repository_lock(self, key: str) -> asyncio.Lock:
+        if key not in self.repo_locks:
+            self.repo_locks[key] = asyncio.Lock()
+
+        return self.repo_locks[key]
+
+    async def _get_rag_pipeline(
+        self,
+        key: str,
+    ) -> RagPipeline:
+        if key not in self.rag_pipelines:
+            pipeline = await asyncio.to_thread(
+                RagPipeline,
+                collection_name=f"repo_{key}",
+            )
+            self.rag_pipelines[key] = pipeline
+
+        return self.rag_pipelines[key]
+
+    async def _index_repository(
+        self,
+        owner: str,
+        repo: str,
+        key: str,
+        rag: RagPipeline,
+    ) -> dict:
+        # Reuse an existing persistent repository index.
+        existing_count = await asyncio.to_thread(
+            rag._vectorstore.count
+        )
+
+        if existing_count > 0:
+            logger.info(
+                "Reusing repository index: %s/%s (%d chunks)",
+                owner,
+                repo,
+                existing_count,
             )
 
-            messages = result.get("messages", [])
-
-            for message in reversed(messages):
-                if getattr(message, "type", "") == "ai":
-                    content = getattr(message, "content", "")
-                    if content and not getattr(message, "tool_calls", []):
-                        rag_context = str(content)
-                        break
-
-            if not rag_context:
-                warnings.append("RAG returned no final context.")
-
-        except Exception:
-            logger.exception("RAG retrieval failed")
-            warnings.append("RAG retrieval failed")
-
-        # 2. GitHub repository retrieval
-        if self.github is not None:
-            try:
-                paths = [
-                    "README.md",
-                    "pyproject.toml",
-                    "requirements.txt",
-                ]
-
-                results = await asyncio.gather(
-                    *[
-                        self.github.call_read_tool(
-                            "get_file_contents",
-                            {
-                                "owner": owner,
-                                "repo": repo,
-                                "path": path,
-                                "ref": "main",
-                            },
-                        )
-                        for path in paths
-                    ],
-                    return_exceptions=True,
-                )
-
-                sections = []
-
-                for path, result in zip(paths, results):
-                    if isinstance(result, Exception):
-                        logger.warning(
-                            "Could not read GitHub file %s: %s",
-                            path,
-                            result,
-                        )
-                        continue
-
-                    for item in result.content:
-                        resource = getattr(item, "resource", None)
-                        content = getattr(resource, "text", None)
-
-                        if content:
-                            sections.append(
-                                f"FILE: {path}\n{content}"
-                            )
-
-                github_context = "\n\n".join(sections)
-
-                if not github_context:
-                    warnings.append("No GitHub files could be retrieved.")
-
-            except Exception:
-                logger.exception("GitHub retrieval failed")
-                warnings.append("GitHub retrieval failed")
-
-        else:
-            warnings.append("GitHub MCP is not configured.")
-
-        # 3. Generate final answer
-        context = f"""
-RAG CONTEXT:
-{rag_context}
-
-GITHUB CONTEXT:
-{github_context}
-"""
-
-        if not rag_context and not github_context:
             return {
-                "answer": "No repository context could be retrieved.",
-                "rag_used": False,
-                "github_used": False,
-                "warnings": warnings,
+                "status": "reused",
+                "indexed_files": 0,
+                "document_count": existing_count,
+                "warnings": [],
             }
 
-        answer = await asyncio.to_thread(
-            self.repo_qa.answer,
-            question,
-            context,
+        if self.github is None:
+            raise RuntimeError(
+                "GitHub MCP is not configured."
+            )
+
+        analyzer = RepositoryAnalyzer(
+            github=self.github,
+        )
+
+        # 1. Discover the repository structure.
+        structure = await analyzer.discover_structure(
+            owner=owner,
+            repo=repo,
+        )
+
+        if not structure.get("files"):
+            raise RuntimeError(
+                "No repository files were discovered."
+            )
+
+        # 2. Prepare a stable local directory.
+        destination = self.REPOSITORY_CACHE / key
+
+        await asyncio.to_thread(
+            shutil.rmtree,
+            destination,
+            ignore_errors=True,
+        )
+
+        destination.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        # 3. Download files through GitHub MCP.
+        download_result = (
+            await analyzer.download_repository_files(
+                owner=owner,
+                repo=repo,
+                structure=structure,
+                destination=destination,
+            )
+        )
+
+        downloaded_count = download_result["downloaded_count"]
+
+        if downloaded_count == 0:
+            raise RuntimeError(
+                "No supported repository files could be downloaded."
+            )
+
+        logger.info(
+            "Downloaded %d files from %s/%s",
+            downloaded_count,
+            owner,
+            repo,
+        )
+
+        # 4. Send the local repository directory to RAG.
+        await asyncio.to_thread(
+            rag.add_documents,
+            destination,
+        )
+
+        document_count = await asyncio.to_thread(
+            rag._vectorstore.count
+        )
+
+        if document_count == 0:
+            raise RuntimeError(
+                "RAG indexing completed without storing documents."
+            )
+
+        warnings = []
+
+        if structure.get("warnings"):
+            warnings.extend(structure["warnings"])
+
+        if download_result["failed_count"] > 0:
+            warnings.append(
+                f"{download_result['failed_count']} files could not be downloaded."
+            )
+
+        logger.info(
+            "Repository indexed: %s/%s, chunks=%d",
+            owner,
+            repo,
+            document_count,
         )
 
         return {
-            "answer": answer,
-            "rag_used": bool(rag_context),
-            "github_used": bool(github_context),
+            "status": "indexed",
+            "indexed_files": downloaded_count,
+            "document_count": document_count,
             "warnings": warnings,
         }
+
+    @staticmethod
+    def _extract_retrieved_context(result) -> str:
+        messages = result.get("messages", [])
+        sections = []
+
+        # Collect actual documents returned by RAG retrieval tools.
+        for message in messages:
+            if getattr(message, "type", "") != "tool":
+                continue
+
+            content = getattr(message, "content", "")
+
+            if content and content.strip() != "No relevant documents found.":
+                sections.append(str(content))
+
+        return "\n\n".join(sections)
+
+    async def answer(
+        self,
+        question: str,
+        owner: str,
+        repo: str,
+    ):
+        key = self._repository_key(owner, repo)
+
+        # Prevent duplicate indexing of the same repository.
+        lock = self._get_repository_lock(key)
+
+        async with lock:
+            try:
+                # 1. Get the repository-specific RAG pipeline.
+                rag = await self._get_rag_pipeline(key)
+
+                # 2. Index the repository if it has not been indexed.
+                index_info = await self._index_repository(
+                    owner=owner,
+                    repo=repo,
+                    key=key,
+                    rag=rag,
+                )
+
+                # 3. Retrieve relevant content from RAG.
+                result = await asyncio.to_thread(
+                    rag.run_pipeline,
+                    question,
+                )
+
+                rag_context = self._extract_retrieved_context(
+                    result
+                )
+
+                if not rag_context:
+                    return {
+                        "answer": (
+                            "The repository was indexed, but RAG "
+                            "did not retrieve relevant content for "
+                            "this question."
+                        ),
+                        "repository": f"{owner}/{repo}",
+                        "rag_used": False,
+                        "github_used": True,
+                        "index_status": index_info["status"],
+                        "indexed_files": index_info["indexed_files"],
+                        "document_count": index_info["document_count"],
+                        "warnings": index_info["warnings"],
+                    }
+
+                # 4. Generate the final grounded answer with OpenRouter.
+                answer = await asyncio.to_thread(
+                    self.repo_qa.answer,
+                    question,
+                    rag_context,
+                )
+
+                return {
+                    "answer": answer,
+                    "repository": f"{owner}/{repo}",
+                    "rag_used": True,
+                    "github_used": True,
+                    "index_status": index_info["status"],
+                    "indexed_files": index_info["indexed_files"],
+                    "document_count": index_info["document_count"],
+                    "warnings": index_info["warnings"],
+                }
+
+            except Exception:
+                logger.exception(
+                    "Repository QA failed for %s/%s",
+                    owner,
+                    repo,
+                )
+                raise

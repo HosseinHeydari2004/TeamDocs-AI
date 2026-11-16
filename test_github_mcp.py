@@ -1,21 +1,44 @@
-
 import asyncio
+
 from devmind.github.tools import GitHubTools
+from devmind.github.repository_analyzer import RepositoryAnalyzer
+
 
 async def main():
     github = GitHubTools()
+    analyzer = RepositoryAnalyzer(github=github)
 
-    result = await github.call_read_tool(
-        "get_file_contents",
-        {
-            "owner": "HosseinHeydari2004",
-            "repo": "TeamDocs-AI",
-            "path": "README.md",
-            "ref": "main"
-        },
+    owner = "HosseinHeydari2004"
+    repo = "TeamDocs-AI"
+
+    # Discover repository structure
+    structure = await analyzer.discover_structure(
+        owner=owner,
+        repo=repo,
     )
 
-    for item in result.content:
-        print(getattr(item, "text", str(item)))
+    print(f"\nRepository: {structure['repository']}")
+    print(f"Directories: {structure['directory_count']}")
+    print(f"Files: {structure['file_count']}")
 
-asyncio.run(main())
+    # Simulate a question from a user
+    question = "Explain the architecture of this repository"
+
+    # Select relevant files dynamically
+    selected_files = analyzer.select_relevant_files(
+        structure=structure,
+        question=question,
+        limit=12,
+    )
+
+    print(f"\nUser question: {question}")
+    print("\nSelected relevant files:")
+
+    for file in selected_files:
+        print(f"\n- {file['path']}")
+        print(f"  Score: {file['score']}")
+        print(f"  Reasons: {', '.join(file['reasons'])}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

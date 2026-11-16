@@ -40,6 +40,9 @@ class RagPipeline:
 
 from __future__ import annotations
 
+from pathlib import Path
+from collections.abc import Iterable
+
 from .vector_db.vector_database import VectorDatabase
 from .preprossing.preprossor import PreprocessingPipeline
 from .rag_agent.tools import build_retrieval_tools
@@ -47,19 +50,18 @@ from .rag_agent.prompt import RAG_AGENT_SYSTEM_PROMPT
 
 from langchain.agents import create_agent
 from langchain.messages import HumanMessage
-from langchain_core.documents import Document
 
 from devmind.llm import get_chat_model
 
 
 class RagPipeline:
-    def __init__(self):
-        # Use OpenRouter instead of Ollama
+    def __init__(self, collection_name: str = "teamdocs-ai"):
         self._chat_model = get_chat_model()
 
-        self._vectorstore: VectorDatabase = VectorDatabase()
+        self._vectorstore = VectorDatabase(
+            collection_name=collection_name
+        )
 
-        # Share the same OpenRouter model with preprocessing
         self._preprocessor = PreprocessingPipeline(
             model=self._chat_model
         )
@@ -72,7 +74,10 @@ class RagPipeline:
             )
         )
 
-    def add_documents(self, source: list[Document]) -> None:
+    def add_documents(
+        self,
+        source: str | Path | Iterable[str | Path],
+    ) -> None:
         documents = self._preprocessor.run(source=source)
         self._vectorstore.add_documents(documents=documents)
 

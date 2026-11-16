@@ -51,3 +51,30 @@ class GitHubTools:
             name,
             arguments or {},
         )
+
+    async def call_read_tools(
+        self,
+        calls: list[tuple[str, dict | None]],
+    ) -> list:
+        """Execute multiple read-only tools using one MCP connection."""
+
+        for name, _ in calls:
+            if name not in self.ALLOWED_TOOLS:
+                raise ValueError(
+                    f"Tool is not allowed by TeamDocs-AI: {name}"
+                )
+
+        results = []
+
+        async with self.client.connect() as session:
+            for name, arguments in calls:
+                try:
+                    result = await session.call_tool(
+                        name,
+                        arguments=arguments or {},
+                    )
+                    results.append(result)
+                except Exception as exc:
+                    results.append(exc)
+
+        return results
