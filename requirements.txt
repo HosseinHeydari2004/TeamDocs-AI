@@ -52,3 +52,5 @@ langchain-core
 pdfminer-six
 beautifulsoup4
 langchain-google-genai
+
+mcp>=1.0,<2
