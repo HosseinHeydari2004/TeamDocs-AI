@@ -1,11 +1,11 @@
-
-from functools import lru_cache
+import logging
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from devmind.services.qa_service import QAService
 
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="TeamDocs-AI",
@@ -18,11 +18,8 @@ class ChatRequest(BaseModel):
     question: str = Field(min_length=1)
     owner: str = "HosseinHeydari2004"
     repo: str = "TeamDocs-AI"
-
-
-@lru_cache
-def get_service():
-    return QAService()
+    openrouter_api_key: str = Field(min_length=1)
+    github_token: str = Field(min_length=1)
 
 
 @app.get("/health")
@@ -33,16 +30,18 @@ def health():
 @app.post("/chat")
 async def chat(request: ChatRequest):
     try:
-        service = get_service()
-
+        service = QAService(
+            openrouter_api_key=request.openrouter_api_key,
+            github_token=request.github_token,
+        )
         return await service.answer(
             question=request.question,
             owner=request.owner,
             repo=request.repo,
         )
-
-    except Exception as exc:
+    except Exception:
+        logger.exception("Chat request failed")
         raise HTTPException(
             status_code=500,
-            detail=str(exc),
+            detail="Repository QA request failed.",
         )

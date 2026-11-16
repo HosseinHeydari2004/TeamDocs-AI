@@ -9,7 +9,7 @@ from devmind.agents.repo_qa import RepoQA
 from devmind.github.tools import GitHubTools
 from devmind.github.repository_analyzer import RepositoryAnalyzer
 from devmind.llm import get_chat_model
-from src.rag.rag_pipeline import RagPipeline
+from rag.rag_pipeline import RagPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -19,17 +19,26 @@ class QAService:
         Path.home() / ".teamdocs-ai" / "repositories"
     )
 
-    def __init__(self):
-        self.repo_qa = RepoQA(get_chat_model())
+    rag_pipelines: dict[str, RagPipeline] = {}
+    repo_locks: dict[str, asyncio.Lock] = {}
+
+    def __init__(
+            self,
+            openrouter_api_key: str,
+            github_token: str,
+    ):
+        chat_model = get_chat_model(api_key=openrouter_api_key)
+
+
+        self.repo_qa = RepoQA(chat_model)
+        self.rag_pipelines: dict[str, RagPipeline] = {}
+        self.repo_locks: dict[str, asyncio.Lock] = {}
 
         self.rag_pipelines: dict[str, RagPipeline] = {}
         self.repo_locks: dict[str, asyncio.Lock] = {}
 
-        try:
-            self.github = GitHubTools()
-        except RuntimeError:
-            logger.exception("GitHub MCP configuration failed")
-            self.github = None
+        self.github = GitHubTools(token=github_token)
+        self.chat_model = chat_model
 
     @staticmethod
     def _repository_key(owner: str, repo: str) -> str:
@@ -44,18 +53,19 @@ class QAService:
 
         return self.repo_locks[key]
 
-    async def _get_rag_pipeline(
-        self,
-        key: str,
-    ) -> RagPipeline:
-        if key not in self.rag_pipelines:
+
+    async def _get_rag_pipeline(self, key):
+        pipeline_key = f"{key}_{id(self.chat_model)}"
+
+        if pipeline_key not in self.rag_pipelines:
             pipeline = await asyncio.to_thread(
                 RagPipeline,
                 collection_name=f"repo_{key}",
+                chat_model=self.chat_model,
             )
-            self.rag_pipelines[key] = pipeline
+            self.rag_pipelines[pipeline_key] = pipeline
 
-        return self.rag_pipelines[key]
+        return self.rag_pipelines[pipeline_key]
 
     async def _index_repository(
         self,

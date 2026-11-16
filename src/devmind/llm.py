@@ -6,17 +6,18 @@ from devmind.config import (
 )
 
 
-def get_chat_model() -> ChatOpenRouter:
-    """Create the configured OpenRouter chat model."""
+def get_chat_model(api_key: str | None = None) -> ChatOpenRouter:
+    if api_key is None:
+        api_key = OPENROUTER_API_KEY
 
-    if not OPENROUTER_API_KEY:
-        raise RuntimeError(
-            "OPENROUTER_API_KEY is missing from .env."
-        )
+    api_key = (api_key or "").strip()
+
+    if not api_key:
+        raise RuntimeError("OpenRouter API key is required.")
 
     return ChatOpenRouter(
         model=OPENROUTER_MODEL,
-        api_key=OPENROUTER_API_KEY,
+        api_key=api_key,
         temperature=0,
         max_tokens=2048,
         max_retries=2,

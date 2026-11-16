@@ -10,13 +10,14 @@ load_dotenv()
 class GitHubMCPClient:
     """Connect to the official GitHub MCP server through Docker."""
 
-    def __init__(self):
-        token = os.getenv("GITHUB_PERSONAL_ACCESS_TOKEN")
+    def __init__(self, token: str | None = None):
+        if token is None:
+            token = os.getenv("GITHUB_PERSONAL_ACCESS_TOKEN")
+
+        token = (token or "").strip()
 
         if not token:
-            raise RuntimeError(
-                "GITHUB_PERSONAL_ACCESS_TOKEN is not set."
-            )
+            raise RuntimeError("GitHub Personal Access Token is required.")
 
         self.server_params = StdioServerParameters(
             command="docker",

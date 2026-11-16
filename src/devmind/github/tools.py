@@ -24,8 +24,8 @@ class GitHubTools:
         "get_tag",
     }
 
-    def __init__(self, client: GitHubMCPClient | None = None):
-        self.client = client or GitHubMCPClient()
+    def __init__(self, client=None, token: str | None = None):
+        self.client = client or GitHubMCPClient(token=token)
 
     async def list_tools(self) -> list[dict]:
         """Return only the tools allowed by this application."""

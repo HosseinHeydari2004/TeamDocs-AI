@@ -55,8 +55,8 @@ from devmind.llm import get_chat_model
 
 
 class RagPipeline:
-    def __init__(self, collection_name: str = "teamdocs-ai"):
-        self._chat_model = get_chat_model()
+    def __init__(self, collection_name: str = "teamdocs-ai", chat_model=None):
+        self._chat_model = chat_model or get_chat_model()
 
         self._vectorstore = VectorDatabase(
             collection_name=collection_name
