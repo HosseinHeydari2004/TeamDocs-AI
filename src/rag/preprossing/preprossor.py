@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 import logging
 from pathlib import Path
 from typing import Iterable
-from langchain_ollama.chat_models import ChatOllama
 from langchain_core.documents import Document
 
 from src.rag.loaders.pipeline import LoaderPipeline
@@ -23,7 +22,7 @@ class PreprocessingPipeline:
             self,
             *,
             loader: LoaderPipeline | None = None,
-            model: ChatOllama | None = None,
+            model=None,
             cleaner: CleanerPipeline | None = None,
             metadata_extractor: MetadataExtractor | None = None,
             chunker: ChunkerPipeline | None = None,
@@ -33,10 +32,7 @@ class PreprocessingPipeline:
     ) -> None:
         self.loader = loader or LoaderPipeline()
         self.cleaner = cleaner or CleanerPipeline()
-        self._model = model if model is not None else ChatOllama(
-            model="qwen2.5:7b-instruct-q4_K_M",
-            temperature=0
-        )
+        self._model = model
 
         self.metadata_extractor = (
             metadata_extractor
