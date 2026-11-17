@@ -2,15 +2,12 @@
 
 import os
 
-from ipython_genutils import path
-
 os.environ.setdefault("USER_AGENT", "TeamDocs-AI/1.0")  # must be set before WebBaseLoader is imported
 
 import shutil
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Iterable
 
 from langchain_core.documents import Document
 

@@ -1,0 +1,104 @@
+"D:\AI Source\Projects\list_of_projects\TeamDocs-AI\.venv\Scripts\python.exe" "D:\AI Source\Projects\list_of_projects\TeamDocs-AI\test\evaluation_test.py"
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights: 100%|██████████| 199/199 [00:00<00:00, 3674.89it/s]
+[1/40] Evaluating: What is the purpose of TeamDocs AI?
+[2/40] Evaluating: What chunk size and overlap are used during ingestion?
+[3/40] Evaluating: Which vector database does the test configuration use?
+[4/40] Evaluating: What is the maximum file size for uploaded documents?
+[5/40] Evaluating: How should I name a branch for a new feature?
+[6/40] Evaluating: What is the commit message format required by the team?
+[7/40] Evaluating: How do I start the application locally?
+[8/40] Evaluating: What is the minimum unit-test coverage required?
+[9/40] Evaluating: What does the health endpoint return?
+[10/40] Evaluating: How many chunks are retrieved per question by default?
+[11/40] Evaluating: Which port is the application available on after starting it locally?
+[12/40] Evaluating: How many stages are there in the RAG pipeline?
+[13/40] Evaluating: What similarity score is shown for the README.md source in the sample query response?
+[14/40] Evaluating: How many reviewers are required for each pull request?
+[15/40] Evaluating: How many document formats are accepted by the upload endpoint?
+[16/40] Evaluating: What are the fields in the request body of POST /api/v1/query?
+[17/40] Evaluating: What does the DELETE /api/v1/documents/{document_id} endpoint do?
+[18/40] Evaluating: What HTTP method and path are used to check the service health?
+[19/40] Evaluating: What does the sources array in the query response contain?
+   ! no retrieved context captured for this question
+[20/40] Evaluating: What file formats are accepted by POST /api/v1/documents?
+[21/40] Evaluating: What environment variables must be set in the .env file?
+[22/40] Evaluating: What are the five stages of the RAG pipeline in order?
+[23/40] Evaluating: How do I re-index documents after updating them?
+[24/40] Evaluating: What code quality tools must be run before opening a pull request?
+[25/40] Evaluating: What steps are required to run the project locally from scratch?
+[26/40] Evaluating: Which technologies make up the test configuration stack?
+[27/40] Evaluating: What is the company's vacation policy?
+[28/40] Evaluating: What is the salary of a senior engineer?
+[29/40] Evaluating: Who is the CEO of the company?
+[30/40] Evaluating: Which version of Python is officially supported?
+[31/40] Evaluating: How many developers are on the team?
+   ! no retrieved context captured for this question
+[32/40] Evaluating: Which vector store does the system rely on?
+[33/40] Evaluating: What is the size of each text chunk during preprocessing?
+[34/40] Evaluating: What branch naming convention should I follow for a bug fix?
+   ! no retrieved context captured for this question
+[35/40] Evaluating: What happens if the answer is not present in the documents?
+   ! no retrieved context captured for this question
+[36/40] Evaluating: What is the required test coverage for core modules?
+[37/40] Evaluating: Does TeamDocs AI use PostgreSQL as its vector database?
+[38/40] Evaluating: Is the default chunk size 1000 tokens?
+[39/40] Evaluating: Is committing directly to main allowed?
+[40/40] Evaluating: Is the maximum upload size 50 MB?
+✨ You're running DeepEval's latest Faithfulness Metric! (using
+qwen2.5:7b-instruct-q4_K_M, strict=False, async_mode=False)...
+✨ You're running DeepEval's latest Answer Relevancy Metric! (using
+qwen2.5:7b-instruct-q4_K_M, strict=False, async_mode=False)...
+✨ You're running DeepEval's latest Contextual Precision Metric! (using
+qwen2.5:7b-instruct-q4_K_M, strict=False, async_mode=False)...
+✨ You're running DeepEval's latest Contextual Recall Metric! (using
+qwen2.5:7b-instruct-q4_K_M, strict=False, async_mode=False)...
+✨ You're running DeepEval's latest Contextual Relevancy Metric! (using
+qwen2.5:7b-instruct-q4_K_M, strict=False, async_mode=False)...
+Warning: Could not load test run from disk: Shared locks on Windows require the
+win32 extra (pywin32); msvcrt provides no true shared lock. Install it with:
+pip install "portalocker"
+In get_cached_test_run, temp=False, Lock acquisition failed: Shared locks on Windows require the win32 extra (pywin32); msvcrt provides no true shared lock. Install it with: pip install "portalocker[win32]"
+In get_cached_test_run, temp=True, Lock acquisition failed: Shared locks on Windows require the win32 extra (pywin32); msvcrt provides no true shared lock. Install it with: pip install "portalocker[win32]"
+
+Warning: Could not load test run from disk: Shared locks on Windows require the
+win32 extra (pywin32); msvcrt provides no true shared lock. Install it with:
+pip install "portalocker"
+Warning: Could not load test run from disk: Shared locks on Windows require the
+win32 extra (pywin32); msvcrt provides no true shared lock. Install it with:
+pip install "portalocker"
+
+⚠ WARNING: No hyperparameters logged.
+» Log hyperparameters to attribute prompts and models to your test runs.
+
+===============================================================================
+=
+
+
+✓ Evaluation completed 🎉! (time taken: 1069.94s | token cost: None)
+» Test Results (40 total tests):
+   » Pass Rate: 2.5% | Passed: 1 | Failed: 39
+
+ ==============================================================================
+==
+
+» Want to share evals with your team, or a place for your test cases to live?
+❤️ 🏡
+  » Run 'deepeval view' to analyze and save testing results on Confident AI.
+
+
+
+============================================================
+DEEPEVAL EVALUATION COMPLETED
+============================================================
+faithfulness             : 0.7407407407407407 (valid=39, failed=1)
+answer_relevancy         : 0.7765364265364265 (valid=39, failed=1)
+contextual_precision     : 0.67875 (valid=40, failed=0)
+contextual_recall        : 0.5581250000000001 (valid=40, failed=0)
+contextual_relevancy     : 0.14193086883876357 (valid=40, failed=0)
+
+Raw outputs: D:\AI Source\Projects\list_of_projects\TeamDocs-AI\evaluation_results\rag_outputs.csv
+Detailed scores: D:\AI Source\Projects\list_of_projects\TeamDocs-AI\evaluation_results\deepeval_detailed_results.csv
+Summary: D:\AI Source\Projects\list_of_projects\TeamDocs-AI\evaluation_results\deepeval_summary.json
+
+Process finished with exit code 0
