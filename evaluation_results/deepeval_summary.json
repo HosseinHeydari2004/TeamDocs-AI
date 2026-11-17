@@ -1,0 +1,33 @@
+{
+  "timestamp": "2026-11-16T09:24:30",
+  "total_questions": 40,
+  "top_k": 5,
+  "retrieval_tools": "all",
+  "metrics": {
+    "faithfulness": {
+      "mean": 0.7407407407407407,
+      "valid_samples": 39,
+      "failed_samples": 1
+    },
+    "answer_relevancy": {
+      "mean": 0.7765364265364265,
+      "valid_samples": 39,
+      "failed_samples": 1
+    },
+    "contextual_precision": {
+      "mean": 0.67875,
+      "valid_samples": 40,
+      "failed_samples": 0
+    },
+    "contextual_recall": {
+      "mean": 0.5581250000000001,
+      "valid_samples": 40,
+      "failed_samples": 0
+    },
+    "contextual_relevancy": {
+      "mean": 0.14193086883876357,
+      "valid_samples": 40,
+      "failed_samples": 0
+    }
+  }
+}
