@@ -1,0 +1,29 @@
+# Usage:  Copy-Item .env.example .env   (then edit)   ->   docker compose up --build -d
+services:
+  teamdocs:
+    build: .
+    image: teamdocs-ai:local
+    container_name: teamdocs-ai
+    env_file: .env
+    environment:
+      # Container-internal paths/ports (not meant to be changed via .env)
+      APP_HOST: 0.0.0.0
+      APP_PORT: "8000"
+      DATA_DIR: /data
+      MODEL_CACHE_DIR: /data/models
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # reach an Ollama running on the host (OLLAMA_BASE_URL=http://host.docker.internal:11434)
+    ports:
+      - "${HOST_PORT:-8000}:8000"
+    volumes:
+      - teamdocs-data:/data      # chroma index + uploaded originals + downloaded embedding model
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/ready', timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 240s
+
+volumes:
+  teamdocs-data:

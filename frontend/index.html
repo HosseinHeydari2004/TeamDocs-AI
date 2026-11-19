@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TeamDocs AI — Engineering Knowledge Assistant</title>
+  <meta name="description" content="AI-powered engineering knowledge assistant with verifiable source citations.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cpath d='M9 10h14M9 16h14M9 22h8' stroke='white' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="app">
+    <aside class="sidebar" aria-label="Primary">
+      <div class="brand">
+        <span class="logo" aria-hidden="true"><svg viewBox="0 0 32 32" width="28" height="28"><rect width="32" height="32" rx="8" fill="currentColor"/><path d="M9 10h14M9 16h14M9 22h8" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg></span>
+        <div><div class="brand-name">TeamDocs AI</div><div class="brand-sub">Engineering knowledge assistant</div></div>
+      </div>
+      <nav class="nav" role="tablist" aria-label="Workspace">
+        <button class="nav-item active" role="tab" id="tab-chat" aria-selected="true" aria-controls="view-chat" data-view="chat">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Assistant</button>
+        <button class="nav-item" role="tab" id="tab-ask" aria-selected="false" aria-controls="view-ask" data-view="ask">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Ask
+        </button>
+        <button class="nav-item" role="tab" id="tab-docs" aria-selected="false" aria-controls="view-docs" data-view="docs">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>Documents <span class="badge" id="doc-count" hidden>0</span>
+        </button>
+        <button class="nav-item" role="tab" id="tab-settings" aria-selected="false" aria-controls="view-settings" data-view="settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
+      </nav>
+      <div class="status" id="status" role="status" aria-live="polite">
+        <div class="status-row"><span class="dot" id="dot-api"></span><span id="status-api">Connecting…</span></div>
+        <div class="status-row"><span class="dot" id="dot-llm"></span><span id="status-llm">Language model</span></div>
+        <div class="status-row"><span class="dot" id="dot-gh"></span><span id="status-gh">GitHub</span></div>
+        <div class="status-meta" id="status-meta"></div>
+      </div>
+    </aside>
+
+    <main id="main" class="main" tabindex="-1">
+      <div id="banner" class="banner" role="alert" hidden></div>
+
+      <section id="view-chat" class="view" role="tabpanel" aria-labelledby="tab-chat">
+        <header class="hero compact">
+          <h1>Assistant</h1>
+          <p>Ask in plain language. The main agent decides whether to search your documents and imported web pages, inspect a GitHub repository, or both.</p>
+        </header>
+        <div id="chat-log" class="chat-log" aria-live="polite"></div>
+        <form id="chat-form" class="ask-card" novalidate>
+          <label for="chat-input" class="sr-only">Your message</label>
+          <textarea id="chat-input" rows="2" maxlength="4000" placeholder="e.g. What does our retry policy say, and which open issues in owner/repo mention it?" required></textarea>
+          <div class="ask-bar">
+            <button type="button" id="chat-clear" class="btn small">New conversation</button>
+            <button type="submit" id="chat-btn" class="btn primary"><span class="btn-label">Send</span><span class="spinner" aria-hidden="true"></span></button>
+          </div>
+        </form>
+      </section>
+
+      <section id="view-ask" class="view" role="tabpanel" aria-labelledby="tab-ask" hidden>
+        <header class="hero">
+          <h1>Search your documents</h1>
+          <p>Ask a question about your team’s documentation. Answers cite the exact passages they came from.</p>
+        </header>
+
+        <form id="ask-form" class="ask-card" novalidate>
+          <label for="question" class="sr-only">Your question</label>
+          <textarea id="question" rows="3" maxlength="2000" placeholder="e.g. How does the retry policy work? Which service issues the auth tokens?" required></textarea>
+          <div class="ask-bar">
+            <div class="ask-options">
+              <label class="field"><span>Document</span>
+                <select id="opt-doc"><option value="">All documents</option></select></label>
+              <label class="field"><span>Retrieval</span>
+                <select id="opt-mode"><option value="">Server default</option><option value="hybrid">Hybrid</option><option value="dense">Semantic</option><option value="bm25">Keyword (BM25)</option></select></label>
+              <label class="check"><input type="checkbox" id="opt-sources-only"> <span>Sources only (no LLM)</span></label>
+            </div>
+            <button type="submit" id="ask-btn" class="btn primary"><span class="btn-label">Ask</span><span class="spinner" aria-hidden="true"></span></button>
+          </div>
+        </form>
+
+        <div class="examples" id="examples" aria-label="Example questions">
+          <span class="examples-label">Try:</span>
+          <button type="button" class="chip">How does authentication work?</button>
+          <button type="button" class="chip">What is the retry policy?</button>
+          <button type="button" class="chip">How do I deploy to production?</button>
+          <button type="button" class="chip">Where is the architecture described?</button>
+        </div>
+
+        <div id="empty-docs" class="empty" hidden>
+          <h2>No documents indexed yet</h2>
+          <p>Upload PDFs, Word or PowerPoint files, Markdown, text or source code to start asking questions.</p>
+          <button class="btn" type="button" data-goto="docs">Upload documents</button>
+        </div>
+
+        <div id="result" aria-live="polite"></div>
+      </section>
+
+      <section id="view-docs" class="view" role="tabpanel" aria-labelledby="tab-docs" hidden>
+        <header class="hero compact"><h1>Documents</h1><p>Files are chunked, embedded and indexed locally. Re-uploading identical content is skipped.</p></header>
+        <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload documents: click or drop files here">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+          <div><strong>Drop files here</strong> or <span class="link">browse</span></div>
+          <div class="hint" id="upload-hint">PDF, DOCX, PPTX, MD, TXT and common source files</div>
+          <input id="file-input" type="file" multiple hidden>
+        </div>
+        <form id="url-form" class="url-form" novalidate>
+          <label for="url-input" class="sr-only">Web page URL</label>
+          <input id="url-input" type="url" inputmode="url" maxlength="2048" placeholder="https://example.com/docs/page — add a web page to the knowledge base" required>
+          <button type="submit" id="url-btn" class="btn primary"><span class="btn-label">Add page</span><span class="spinner" aria-hidden="true"></span></button>
+        </form>
+        <ul id="upload-log" class="upload-log" aria-live="polite"></ul>
+        <div id="docs-list" class="docs-list"></div>
+      </section>
+
+      <section id="view-settings" class="view" role="tabpanel" aria-labelledby="tab-settings" hidden>
+        <header class="hero compact"><h1>Settings &amp; connections</h1><p>Real status of each provider. Secrets are never shown; they are read from <code>.env</code> or the environment.</p></header>
+        <div class="settings-actions">
+          <button type="button" class="btn primary" id="btn-check"><span class="btn-label">Check connections</span><span class="spinner" aria-hidden="true"></span></button>
+          <button type="button" class="btn" id="btn-reload">Reload .env</button>
+        </div>
+        <div id="settings-cards" class="settings-cards"></div>
+        <form id="llm-form" class="ask-card" novalidate>
+          <h2 class="card-title">Model selection <span class="muted">(this session only)</span></h2>
+          <div class="ask-options">
+            <label class="field"><span>Provider</span>
+              <select id="sel-provider"><option value="auto">Auto (OpenRouter if a key exists, else Ollama)</option><option value="openrouter">OpenRouter</option><option value="ollama">Ollama (local)</option></select></label>
+            <label class="field"><span>OpenRouter model</span><input id="sel-or-model" type="text" maxlength="200" placeholder="default"></label>
+            <label class="field"><span>Ollama model</span><input id="sel-ol-model" type="text" maxlength="200" list="ollama-models" placeholder="default"><datalist id="ollama-models"></datalist></label>
+          </div>
+          <div class="ask-bar"><span class="muted" id="llm-form-msg"></span><button type="submit" class="btn primary">Apply</button></div>
+        </form>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

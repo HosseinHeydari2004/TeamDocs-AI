@@ -1,15 +1,15 @@
 from __future__ import annotations
+
 import logging
 import time
-
 from collections.abc import Sequence
 
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
 
-from .schema import SemanticMetadata
 from .prompts import METADATA_EXTRACTION_PROMPT
+from .schema import SemanticMetadata
 
 logger = logging.getLogger(__name__)
 

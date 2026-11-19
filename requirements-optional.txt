@@ -1,0 +1,4 @@
+# Optional features that are NOT needed to run the TeamDocs AI web app.
+# RAG evaluation script (evaluation/rag/rag_evaluation.py)
+deepeval==4.3.4
+pandas>=2.2,<3.0

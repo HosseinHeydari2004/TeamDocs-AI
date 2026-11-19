@@ -1,4 +1,8 @@
+"""LEGACY (not used by the API): repository indexing flow that predates the Main Agent.
 
+It builds its own RagPipeline/embedding model per repository. Repository questions are now answered live by the
+GitHub sub-agent (POST /api/v1/chat). Kept for reference; see README 'Known limitations'.
+"""
 import asyncio
 import hashlib
 import logging
@@ -6,8 +10,8 @@ import shutil
 from pathlib import Path
 
 from devmind.agents.repo_qa import RepoQA
-from devmind.github.tools import GitHubTools
 from devmind.github.repository_analyzer import RepositoryAnalyzer
+from devmind.github.tools import GitHubTools
 from devmind.llm import get_chat_model
 from rag.rag_pipeline import RagPipeline
 
@@ -29,11 +33,7 @@ class QAService:
     ):
         chat_model = get_chat_model(api_key=openrouter_api_key)
 
-
         self.repo_qa = RepoQA(chat_model)
-        self.rag_pipelines: dict[str, RagPipeline] = {}
-        self.repo_locks: dict[str, asyncio.Lock] = {}
-
         self.rag_pipelines: dict[str, RagPipeline] = {}
         self.repo_locks: dict[str, asyncio.Lock] = {}
 

@@ -1,6 +1,9 @@
+import logging
 from pathlib import Path
 
 from langchain_community.document_loaders import TextLoader as LCTextLoader
+
+logger = logging.getLogger(__name__)
 
 
 class RustCodeLoader:
@@ -22,5 +25,5 @@ class RustCodeLoader:
                     doc.metadata["language"] = "rust"
                     docs.append(doc)
             except Exception as e:
-                print(f"skip {file.name}: {e}")
+                logger.warning("skip %s: %s", file.name, e)
         return docs

@@ -1,9 +1,27 @@
-.idea/
-test/
+# Secrets / local config
+.env
+.env.*
+!.env.example
+
+# Runtime data (index, uploads, downloaded models)
+data/*
+vector_database/
+
+# Python
 __pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
 env/
+.pytest_cache/
+.ruff_cache/
+
+# Tooling / archives
+.idea/
+.vscode/
 *.zip
 *.rar
-.env
-vector_database/
-.venv/
+!data/.gitkeep
+.env.example
+src/data/models/

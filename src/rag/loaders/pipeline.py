@@ -4,18 +4,20 @@ import os
 
 os.environ.setdefault("USER_AGENT", "TeamDocs-AI/1.0")  # must be set before WebBaseLoader is imported
 
+import logging
 import shutil
 import tempfile
 import zipfile
+from collections.abc import Iterable
 from pathlib import Path
+from typing import TypeAlias
 
 from langchain_core.documents import Document
 
-from rag.loaders import DocsLoader, PDFLoader, MarkdownLoader, TXTLoader, PPTXLoader
+from rag.loaders import DocsLoader, MarkdownLoader, PDFLoader, PPTXLoader, TXTLoader
 from rag.loaders.web_loader.web import WebLoader
 
 from .code_loader import (
-    SQLCodeLoader,
     CppCodeLoader,
     CSharpCodeLoader,
     GoCodeLoader,
@@ -25,9 +27,11 @@ from .code_loader import (
     KotlinCodeLoader,
     PythonCodeLoader,
     RustCodeLoader,
+    SQLCodeLoader,
     TypeScriptCodeLoader,
 )
-from typing import Iterable, TypeAlias
+
+logger = logging.getLogger(__name__)
 
 SourceLike: TypeAlias = str | Path | Iterable[str | Path]
 
@@ -219,7 +223,7 @@ class LoaderPipeline:
             )
 
         kwargs = {**self.default_kwargs, **self.per_suffix_kwargs.get(suffix, {})}
-        return loader_cls()
+        return loader_cls(**kwargs)
 
     def load_file(self, file_path: str | Path) -> list[Document]:
         """
@@ -285,7 +289,7 @@ class LoaderPipeline:
         >>> loader = LoaderPipeline()
         >>> docs = loader.load_url("https://example.com/docs")
         """
-        docs = WebLoader().load(url=url)
+        docs = WebLoader(**self.per_suffix_kwargs.get("web", {})).load(url=url)
 
         for doc in docs:
             doc.metadata.setdefault("source", url)
@@ -322,7 +326,7 @@ class LoaderPipeline:
             try:
                 all_docs.extend(self.load(s))
             except Exception as exc:
-                print(f"Skipped {s}: {exc}")
+                logger.warning("Skipped %s: %s", s, exc)
 
         return all_docs
 

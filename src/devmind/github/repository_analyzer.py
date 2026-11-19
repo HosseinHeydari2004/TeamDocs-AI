@@ -1,12 +1,11 @@
-import re
 import json
 import logging
-
+import re
 from collections import deque
-
-from devmind.github.tools import GitHubTools
-
 from pathlib import Path, PurePosixPath
+
+from devmind.github.results import result_is_error, result_text
+from devmind.github.tools import GitHubTools
 
 logger = logging.getLogger(__name__)
 
@@ -293,6 +292,8 @@ class RepositoryAnalyzer:
                     },
                 )
 
+                if result_is_error(result):
+                    raise RuntimeError(result_text(result)[:200] or "GitHub returned an error")
                 entries = self._parse_entries(result)
 
                 for entry in entries:
@@ -389,29 +390,14 @@ class RepositoryAnalyzer:
         failed = []
 
         for file, result in zip(candidates, results):
-            if isinstance(result, Exception) or getattr(result, "isError", False):
+            if result_is_error(result):  # handles mcp 1.x ``isError`` and 2.x ``is_error``
                 failed.append(file["path"])
                 continue
 
-            content_parts = []
-
-            for item in result.content:
-                resource = getattr(item, "resource", None)
-                content = getattr(resource, "text", None)
-
-                if content is None:
-                    content = getattr(item, "text", None)
-
-                if content:
-                    content_parts.append(content)
-
-            if not content_parts:
+            content = result_text(result)
+            if not content:
                 failed.append(file["path"])
                 continue
-
-            content = "\n".join(content_parts)
-
-            relative_path = PurePosixPath(file["path"])
 
             relative_path = PurePosixPath(file["path"])
 
@@ -431,6 +417,7 @@ class RepositoryAnalyzer:
                 continue
 
             try:
+                local_path.parent.mkdir(parents=True, exist_ok=True)  # files in sub-directories used to always fail
                 local_path.write_text(content, encoding="utf-8")
                 downloaded.append(file["path"])
             except OSError:

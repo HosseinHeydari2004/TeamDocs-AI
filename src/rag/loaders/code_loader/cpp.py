@@ -1,7 +1,12 @@
+import logging
 from pathlib import Path
-from langchain_core.documents import Document
+
 from langchain_community.document_loaders import TextLoader as LCTextLoader
+from langchain_core.documents import Document
+
 from rag.loaders.base import BaseLoader
+
+logger = logging.getLogger(__name__)
 
 class CppCodeLoader(BaseLoader):
     EXTENSIONS = {".c", ".h", ".cpp", ".cc", ".cxx", ".hpp", ".hh", ".hxx"}
@@ -26,6 +31,6 @@ class CppCodeLoader(BaseLoader):
                     )
                     docs.append(doc)
             except Exception as e:
-                print(f"skip {file.name}: {e}")
+                logger.warning("skip %s: %s", file.name, e)
 
         return docs

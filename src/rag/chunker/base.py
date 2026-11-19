@@ -1,5 +1,7 @@
-from langchain_core.documents import Document
 from abc import ABC, abstractmethod
+
+from langchain_core.documents import Document
+
 
 class BaseChunker(ABC):
     @abstractmethod

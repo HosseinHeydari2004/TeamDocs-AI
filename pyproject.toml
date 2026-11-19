@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "teamdocs-ai"
+version = "0.2.0"
+description = "TeamDocs AI - AI-powered engineering knowledge assistant (hybrid RAG with source citations)"
+readme = "README.md"
+requires-python = ">=3.11"
+dynamic = ["dependencies", "optional-dependencies"]
+
+# Single source of truth for dependencies: the requirements*.txt files.
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+optional-dependencies.dev = { file = ["requirements-dev.txt"] }
+optional-dependencies.optional = { file = ["requirements-optional.txt"] }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["rag*", "devmind*", "teamdocs*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra -q"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+extend-exclude = ["evaluation"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["B008", "E501", "B905", "UP042"]

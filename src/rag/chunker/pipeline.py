@@ -29,7 +29,7 @@ class ChunkerPipeline:
     ) -> None:
         self.chunkers: dict[str, BaseChunker] = {
             "code": CodeChunker(chunk_size, overlap),
-            "markdown": MarkdownChunker(),
+            "markdown": MarkdownChunker(chunk_size, min(overlap, chunk_size // 2)),
             "pdf": PDFChunker(chunk_size, overlap),
             "text": TXTChunker(chunk_size, overlap),
             "web": WebChunker(chunk_size, overlap),
@@ -38,10 +38,11 @@ class ChunkerPipeline:
     def _detect_type(self, doc: Document) -> str:
         metadata = doc.metadata or {}
 
-        # Explicit document type takes priority.
-        doc_type = metadata.get("document_type")
-        if doc_type in self.chunkers:
-            return doc_type
+        # An explicit strategy takes priority. NOTE: ``document_type`` is reserved
+        # for the semantic (LLM-extracted) metadata and must not drive routing.
+        strategy = metadata.get("chunk_strategy")
+        if strategy in self.chunkers:
+            return strategy
 
         source = str(metadata.get("source", ""))
         source_type = str(metadata.get("source_type", "")).lower()
@@ -55,7 +56,7 @@ class ChunkerPipeline:
 
         suffix = Path(urlparse(source).path).suffix.lower()
 
-        if suffix == ".pdf":
+        if str(metadata.get("file_type", "")).lower() == "pdf" or suffix == ".pdf":
             return "pdf"
 
         if suffix in {".md", ".markdown", ".mdx"}:
@@ -83,7 +84,7 @@ class ChunkerPipeline:
             document_chunks = chunker.chunk([doc])
 
             for chunk_index, chunk in enumerate(document_chunks):
-                metadata = {**doc.metadata, **chunk.metadata, "document_type": doc_type, "chunk_index": chunk_index}
+                metadata = {**doc.metadata, **chunk.metadata, "chunk_strategy": doc_type, "chunk_index": chunk_index}
 
                 chunks.append(
                     Document(

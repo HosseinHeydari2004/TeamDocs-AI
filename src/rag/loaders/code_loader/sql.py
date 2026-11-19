@@ -1,13 +1,18 @@
+import logging
 from pathlib import Path
 
 from langchain_community.document_loaders import TextLoader as LCTextLoader
+
 from rag.loaders.base import BaseLoader
+
+logger = logging.getLogger(__name__)
 
 class SQLCodeLoader(BaseLoader):
     EXTENSIONS = {".sql", ".ddl", ".psql", ".pgsql", ".mysql"}
     SKIP_DIRS = {".git", "env", "venv", ".venv", "node_modules", "build", "dist", ".idea"}
 
-    def __init__(self, max_file_size=5_000_000):
+    def __init__(self, max_file_size: int = 5_000_000, **options):
+        super().__init__(**options)
         self.max_file_size = max_file_size
 
     def load(self, path):
@@ -20,7 +25,7 @@ class SQLCodeLoader(BaseLoader):
         docs = []
         for file in files:
             if file.stat().st_size > self.max_file_size:
-                print(f"skip {file.name}: file too large")
+                logger.warning("skip %s: file too large", file.name)
                 continue
             try:
                 loader = LCTextLoader(str(file), encoding="utf-8", autodetect_encoding=True)
@@ -28,5 +33,5 @@ class SQLCodeLoader(BaseLoader):
                     doc.metadata["language"] = "sql"
                     docs.append(doc)
             except Exception as e:
-                print(f"skip {file.name}: {e}")
+                logger.warning("skip %s: %s", file.name, e)
         return docs

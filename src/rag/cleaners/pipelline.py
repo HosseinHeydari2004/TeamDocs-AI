@@ -1,16 +1,20 @@
 from __future__ import annotations
-from .base import BaseCleaner
-from langchain_core.documents import Document
-from .web_cleaner import WebDocumentCleaner
-from .docs_cleaner import DocumentCleaner
-from .code_cleaner import CodeDocumentCleaner
-from typing import Any
+
 from pathlib import PurePosixPath, PureWindowsPath
+
+from langchain_core.documents import Document
+
+from .base import BaseCleaner
+from .code_cleaner import CodeDocumentCleaner
+from .docs_cleaner import DocumentCleaner
+from .web_cleaner import WebDocumentCleaner
 
 
 class CleanerPipeline(BaseCleaner):
+    """Route every document to the cleaner that matches its origin/type."""
+
     _URL_PREFIXES: tuple[str, ...] = ("http://", "https://")
-    _SUPPORTED_EXTENSIONS_CODE = {
+    _SUPPORTED_EXTENSIONS_CODE: frozenset[str] = frozenset({
         ".sql",
         ".cpp", ".cc", ".cxx", ".hpp", ".h",
         ".cs",
@@ -22,81 +26,62 @@ class CleanerPipeline(BaseCleaner):
         ".py",
         ".rs",
         ".ts", ".tsx",
-
-    }
-    _SUPPORTED_EXTENSIONS_DOCUMENT: dict[str, Any] = {
+    })
+    _SUPPORTED_EXTENSIONS_DOCUMENT: frozenset[str] = frozenset({
         ".pdf",
-        ".doc",
-        ".docx",
-        ".docs",
-        ".md",
-        ".markdown",
+        ".doc", ".docx", ".docs",
+        ".pptx",
+        ".md", ".markdown",
         ".txt",
-    }
-    _SUPPORTED_EXTENSIONS: set[str] = (
-            _SUPPORTED_EXTENSIONS_CODE
-            | _SUPPORTED_EXTENSIONS_DOCUMENT
+    })
+    _SUPPORTED_EXTENSIONS: frozenset[str] = (
+        _SUPPORTED_EXTENSIONS_CODE | _SUPPORTED_EXTENSIONS_DOCUMENT
     )
 
     def clean(self, documents: list[Document]) -> list[Document]:
-        docs:list[Document] = []
+        cleaned: list[Document] = []
         for document in documents:
-            extension = self._get_extension(metadata=document.metadata.copy())
-            if extension in self._SUPPORTED_EXTENSIONS_DOCUMENT:
-                cleaner = DocumentCleaner()
-            elif extension in self._SUPPORTED_EXTENSIONS_CODE:
-                cleaner = CodeDocumentCleaner()
-            elif self._is_url(source=document.metadata["source"]):
-                cleaner = WebDocumentCleaner()
-            else:
-                raise ValueError(f"Unsupported document type {document.metadata.type}")
-            docs.extend(cleaner.clean(documents=[document]))
-        return docs
+            cleaner = self._select_cleaner(document)
+            cleaned.extend(cleaner.clean(documents=[document]))
+        return cleaned
 
+    def _select_cleaner(self, document: Document) -> BaseCleaner:
+        metadata = document.metadata or {}
+        source = str(metadata.get("source", ""))
+
+        # Web pages first: a URL has no meaningful file extension.
+        if self._is_url(source) or str(metadata.get("file_type", "")).lower() == "web":
+            return WebDocumentCleaner()
+
+        extension = self._get_extension(metadata)
+        if extension in self._SUPPORTED_EXTENSIONS_DOCUMENT:
+            return DocumentCleaner()
+        if extension in self._SUPPORTED_EXTENSIONS_CODE:
+            return CodeDocumentCleaner()
+        raise ValueError(f"Unsupported document type: {extension!r} (source={source!r})")
 
     @classmethod
     def _get_extension(cls, metadata: dict) -> str:
-        """Get a supported extension from metadata."""
-
+        """Return a supported extension from ``file_type`` or ``source``."""
         file_type = str(metadata.get("file_type", "")).strip().lower()
-
         if file_type:
             if not file_type.startswith("."):
                 file_type = f".{file_type}"
-
             if file_type in cls._SUPPORTED_EXTENSIONS:
                 return file_type
 
         source = str(metadata.get("source", "")).strip()
-
         if source:
-            # Support both Windows and Unix-style paths.
-            extension = PureWindowsPath(source).suffix.lower()
-
-            if not extension:
-                extension = PurePosixPath(source).suffix.lower()
-
+            # Support both Windows and POSIX style paths.
+            extension = PureWindowsPath(source).suffix.lower() or PurePosixPath(source).suffix.lower()
             if extension in cls._SUPPORTED_EXTENSIONS:
                 return extension
 
         raise ValueError(
-            "Cannot determine supported code file extension "
-            "from document metadata."
+            "Cannot determine a supported file extension from document metadata "
+            f"(file_type={metadata.get('file_type')!r}, source={metadata.get('source')!r})."
         )
 
-    def _is_url(self, source:object| str) -> bool:
-        """
-        Return whether ``source`` is an HTTP or HTTPS URL string.
-
-        Parameters
-        ----------
-        source : object
-            Candidate source; non-string values always return ``False``.
-
-        Returns
-        -------
-        bool
-            ``True`` if ``source`` is a string starting with a supported URL
-            prefix, otherwise ``False``.
-        """
+    def _is_url(self, source: object) -> bool:
+        """Return whether ``source`` is an HTTP(S) URL string."""
         return isinstance(source, str) and source.lower().startswith(self._URL_PREFIXES)

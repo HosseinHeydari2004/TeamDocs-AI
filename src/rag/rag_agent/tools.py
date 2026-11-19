@@ -1,5 +1,6 @@
 from langchain.tools import tool
-from src.rag.vector_db.vector_database import VectorDatabase
+
+from rag.vector_db.vector_database import VectorDatabase
 
 
 def format_documents(documents) -> str:

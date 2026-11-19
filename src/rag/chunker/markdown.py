@@ -3,11 +3,12 @@ from langchain_text_splitters import (
     MarkdownHeaderTextSplitter,
     RecursiveCharacterTextSplitter,
 )
+
 from .base import BaseChunker
 
 
 class MarkdownChunker(BaseChunker):
-    def __init__(self, **kwargs):
+    def __init__(self, chunk_size: int = 1200, overlap: int = 120, **kwargs):
         self._header_splitter = MarkdownHeaderTextSplitter(
             headers_to_split_on=[
                 ("#", "h1"),
@@ -17,8 +18,8 @@ class MarkdownChunker(BaseChunker):
             strip_headers=False,
         )
         self._splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1200,
-            chunk_overlap=120
+            chunk_size=chunk_size,
+            chunk_overlap=overlap,
         )
 
     def chunk(self, docs: list[Document]) -> list[Document]:

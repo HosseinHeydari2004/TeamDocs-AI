@@ -1,4 +1,3 @@
-import re
 from pathlib import PurePosixPath, PureWindowsPath
 
 from langchain_core.documents import Document
