@@ -172,20 +172,97 @@
     return out;
   }
 
+    /* ---------------------------------------------------------------- answer rendering */
+  function inline(text, onCite) {
+    const out = [];
+    const re = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(https?:\/\/[^\s)]+\)|\[\d{1,3}\])/g;
+    let last = 0, m;
+    while ((m = re.exec(text))) {
+      if (m.index > last) out.push(document.createTextNode(text.slice(last, m.index)));
+      const tok = m[0];
+      if (tok.startsWith("**")) out.push(el("strong", {}, inline(tok.slice(2, -2), onCite)));
+      else if (tok.startsWith("`")) out.push(el("code", { text: tok.slice(1, -1) }));
+      else if (tok.startsWith("[") && tok.includes("](")) {
+        const i = tok.indexOf("](");
+        out.push(el("a", { href: tok.slice(i + 2, -1), target: "_blank", rel: "noopener noreferrer", text: tok.slice(1, i) }));
+      } else { const n = Number(tok.slice(1, -1)); out.push(el("button", { class: "cite", type: "button", title: `Show source ${n}`, "aria-label": `Show source ${n}`, text: String(n), onclick: () => onCite(n) })); }
+      last = m.index + tok.length;
+    }
+    if (last < text.length) out.push(document.createTextNode(text.slice(last)));
+    return out;
+  }
+
+  // inline() plus <br> support (models often put it inside table cells)
+  function cellContent(text, onCite) {
+    const parts = text.split(/<br\s*\/?>/i), out = [];
+    parts.forEach((p, i) => { if (i) out.push(el("br")); out.push(...inline(p.trim(), onCite)); });
+    return out;
+  }
+
+  function splitRow(line) {
+    let s = line.trim();
+    if (s.startsWith("|")) s = s.slice(1);
+    if (s.endsWith("|") && !s.endsWith("\\|")) s = s.slice(0, -1);
+    return s.split(/(?<!\\)\|/).map((c) => c.replace(/\\\|/g, "|").trim());
+  }
+
   function renderMarkdown(text, onCite) {
     const root = el("div", { class: "answer" });
-    let list = null, para = [];
+    const lines = String(text || "").replace(/\r\n?/g, "\n").split("\n");
+    const isSep = (l) => /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/.test(l) && l.includes("-");
+    let para = [], stack = [];            // stack: open (nested) lists, {indent, node}
     const flush = () => { if (para.length) { root.append(el("p", {}, inline(para.join(" "), onCite))); para = []; } };
-    const endList = () => { list = null; };
-    for (const raw of text.split("\n")) {
-      const line = raw.trimEnd();
-      const bullet = line.match(/^\s*[-*•]\s+(.*)$/), number = line.match(/^\s*\d+[.)]\s+(.*)$/);
-      if (bullet || number) {
+    const endList = () => { stack = []; };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trimEnd();
+
+      // fenced code block
+      const fence = line.match(/^\s*(```|~~~)\s*([\w+-]*)/);
+      if (fence) {
+        flush(); endList();
+        const code = [];
+        for (i++; i < lines.length && !lines[i].trim().startsWith(fence[1]); i++) code.push(lines[i]);
+        root.append(el("pre", { class: "codeblock" }, el("code", { text: code.join("\n") })));
+        continue;
+      }
+      // table: header row + separator row
+      if (line.includes("|") && i + 1 < lines.length && isSep(lines[i + 1])) {
+        flush(); endList();
+        const head = splitRow(line), rows = [];
+        for (i += 2; i < lines.length && lines[i].includes("|") && lines[i].trim(); i++) rows.push(splitRow(lines[i]));
+        i--;
+        root.append(el("div", { class: "table-wrap" }, el("table", {},
+          el("thead", {}, el("tr", {}, head.map((h) => el("th", {}, cellContent(h, onCite))))),
+          el("tbody", {}, rows.map((r) => el("tr", {}, head.map((_, c) => el("td", {}, cellContent(r[c] || "", onCite)))))))));
+        continue;
+      }
+      // heading (the page already has an <h2> "Answer", so # -> h3)
+      const h = line.match(/^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$/);
+      if (h) { flush(); endList(); root.append(el("h" + Math.min(h[1].length + 2, 6), { class: "md-h" }, inline(h[2], onCite))); continue; }
+      // horizontal rule
+      if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(line)) { flush(); endList(); root.append(el("hr")); continue; }
+      // blockquote
+      const q = line.match(/^\s*>\s?(.*)$/);
+      if (q) { flush(); endList(); root.append(el("blockquote", {}, inline(q[1], onCite))); continue; }
+      // (nested) lists
+      const li = line.match(/^(\s*)([-*•]|\d+[.)])\s+(.*)$/);
+      if (li) {
         flush();
-        const type = bullet ? "ul" : "ol";
-        if (!list || list.tagName.toLowerCase() !== type) { list = el(type); root.append(list); }
-        list.append(el("li", {}, inline((bullet || number)[1], onCite)));
-      } else if (!line.trim()) { flush(); endList(); } else { endList(); para.push(line.trim()); }
+        const indent = li[1].replace(/\t/g, "    ").length, type = /\d/.test(li[2]) ? "ol" : "ul";
+        while (stack.length && stack[stack.length - 1].indent > indent) stack.pop();
+        let top = stack[stack.length - 1];
+        if (top && top.indent === indent && top.node.tagName.toLowerCase() !== type) { stack.pop(); top = stack[stack.length - 1]; }
+        if (!top || top.indent < indent) {
+          const node = el(type);
+          if (top && top.node.lastElementChild) top.node.lastElementChild.append(node); else root.append(node);
+          stack.push({ indent, node });
+        }
+        stack[stack.length - 1].node.append(el("li", {}, inline(li[3], onCite)));
+        continue;
+      }
+      if (!line.trim()) { flush(); endList(); continue; }
+      endList(); para.push(line.trim());
     }
     flush();
     return root;
