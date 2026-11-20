@@ -449,15 +449,6 @@ Errors always use one format: `{"error": {"code": "...", "message": "..."}}`, fo
 - [x] Hybrid retrieval with citations
 - [x] Web page import with SSRF protection
 - [x] Docker Compose deployment
-- [ ] Real-model validation (OpenRouter / Ollama) and routing evaluation
-- [ ] Authentication and multi-tenant collections
-- [ ] Cross-encoder reranking
-- [ ] Streaming answers
-- [ ] OCR for scanned PDFs
-- [ ] Persisted BM25 index
-- [ ] Lockfile + CI
-- [ ] Repository indexing on the shared vector store
-- [ ] Unauthenticated public-repo reads via the GitHub REST API
 
 <a id="limitations"></a>
 
