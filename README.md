@@ -6,16 +6,45 @@
 
 **An AI engineering assistant that answers from your documents with verifiable citations, and inspects your GitHub repositories, issues and pull requests.**
 
-[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](#-quick-start)
-[![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)](#-api)
-[![LangChain](https://img.shields.io/badge/LangChain-Agents-1C3C3C)](#-meet-the-agents)
-[![ChromaDB](https://img.shields.io/badge/ChromaDB-Vector%20Store-FF6F00)](#-the-rag-pipeline)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](#-run-with-docker-compose)
-[**Problem**](#-the-problem) · [**Solution**](#-the-solution) · [**Status**](#-project-status) · [**Architecture**](#-architecture) · [**Agents**](#-meet-the-agents) · [**RAG**](#-the-rag-pipeline) · [**Quick start**](#-quick-start) · [**API**](#-api) · [**Security**](#-security) · [**Roadmap**](#-roadmap)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](#quick-start)
+[![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)](#api)
+[![LangChain](https://img.shields.io/badge/LangChain-Agents-1C3C3C)](#agents)
+[![ChromaDB](https://img.shields.io/badge/ChromaDB-Vector%20Store-FF6F00)](#rag)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](#docker)
+
+[**Problem**](#problem) · [**Solution**](#solution) · [**Architecture**](#architecture) · [**Agents**](#agents) · [**RAG**](#rag) · [**Quick start**](#quick-start) · [**API**](#api) · [**Security**](#security) · [**Roadmap**](#roadmap)
 
 </div>
 
+<details>
+<summary><b>📑 Table of contents</b></summary>
+
+1. [At a glance](#at-a-glance)
+2. [The Problem](#problem)
+3. [The Solution](#solution)
+4. [See it in action](#demo)
+5. [Architecture](#architecture)
+6. [Meet the Agents](#agents)
+7. [The RAG Pipeline](#rag)
+8. [Quick Start](#quick-start)
+   - [Run locally](#local)
+   - [Run with Docker Compose](#docker)
+9. [Configuration](#configuration)
+10. [API](#api)
+11. [Security](#security)
+12. [What is verified and what is not](#verified)
+13. [Roadmap](#roadmap)
+    - [Known limitations](#limitations)
+    - [Troubleshooting](#troubleshooting)
+14. [Project structure](#structure)
+15. [Tech stack](#tech-stack)
+16. [Contributing](#contributing) · [License](#license)
+
+</details>
+
 ---
+
+<a id="at-a-glance"></a>
 
 ## ⚡ At a glance
 
@@ -24,6 +53,8 @@
 | **Main Agent** routes every question | **Hybrid retrieval** dense + BM25 | **Read-only GitHub** via MCP | **SSRF-safe** URL import, secrets never logged |
 
 ---
+
+<a id="problem"></a>
 
 ## 🎯 The Problem
 
@@ -36,6 +67,8 @@ Engineering knowledge is scattered across **PDFs, slide decks, READMEs, runbooks
 | Click through GitHub by hand | Slow, and disconnected from the docs that explain the code |
 
 ---
+
+<a id="solution"></a>
 
 ## 💡 The Solution
 
@@ -66,6 +99,8 @@ Read-only GitHub tools, bounded agent runs, untrusted text treated as data in ev
 
 ---
 
+<a id="demo"></a>
+
 ## 🎬 See it in action
 
 > **You:** *"How does our retry policy work, and which open issues in `owner/repo` mention it?"*
@@ -82,12 +117,6 @@ Answer: Failed payment requests are retried up to 4 times with exponential
 Every response reports **which agents ran, which model each one used, their sources, and any failure**. A failed sub-agent is reported as a failure, never passed off as an answer.
 
 ---
-
-## 📊 Project Status
-
-> **Version 0.2.0 · under active development.** The core system is implemented end to end. Validation with real models is the next milestone.
-
-**Legend:** ✅ Done · 🟡 In progress · ⬜ Planned
 
 ### Core platform
 
@@ -130,8 +159,8 @@ Every response reports **which agents ran, which model each one used, their sour
 | Automated test suite (pytest) | 🟡 | Configured in `pyproject.toml`; test files to be published with the repo |
 | Real-LLM validation (OpenRouter / Ollama) | 🟡 | Routing quality and latency not yet measured |
 | GitHub agent against real github.com | 🟡 | Needs a run with a valid token for GraphQL-backed tools |
-| Authentication + multi-tenancy | ⬜ | See [Roadmap](#-roadmap) |
-| Streaming answers · reranking · OCR | ⬜ | See [Roadmap](#-roadmap) |
+| Authentication + multi-tenancy | ⬜ | See [Roadmap](#roadmap) |
+| Streaming answers · reranking · OCR | ⬜ | See [Roadmap](#roadmap) |
 
 <div align="center">
 
@@ -140,6 +169,8 @@ Every response reports **which agents ran, which model each one used, their sour
 </div>
 
 ---
+
+<a id="architecture"></a>
 
 ## 🏗️ Architecture
 
@@ -166,6 +197,8 @@ flowchart LR
 
 ---
 
+<a id="agents"></a>
+
 ## 🧠 Meet the Agents
 
 | Agent | Role | Tools | Guardrails |
@@ -187,6 +220,8 @@ Each sub-agent runs **bounded**: tool-call limit, model-call limit, recursion li
 A **missing** key is never confused with a **rejected** key or an **outage**. In `auto` mode, an outage or rejection triggers exactly **one controlled retry on Ollama** and is reported in `warnings` and `model.fallback`. GitHub credentials are fully **independent**: a missing GitHub token never blocks RAG, and a missing OpenRouter key never blocks GitHub reads.
 
 ---
+
+<a id="rag"></a>
 
 ## ⚙️ The RAG Pipeline
 
@@ -213,6 +248,8 @@ flowchart LR
 
 ---
 
+<a id="quick-start"></a>
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -223,6 +260,8 @@ flowchart LR
   - an [OpenRouter](https://openrouter.ai) API key, **or**
   - a local [Ollama](https://ollama.com) with a **tool-calling** model: `ollama pull qwen2.5:7b-instruct-q4_K_M`
 - *(Optional)* **GitHub agent:** a read-only GitHub token **and** either Docker or a local [`github-mcp-server`](https://github.com/github/github-mcp-server/releases) binary
+
+<a id="local"></a>
 
 ### 💻 Run locally
 
@@ -263,6 +302,8 @@ python -m teamdocs.main
 
 > The first start downloads the embedding model. `/ready` returns **503** until it is loaded.
 
+<a id="docker"></a>
+
 ### 🐳 Run with Docker Compose
 
 ```bash
@@ -280,6 +321,8 @@ docker compose down -v     # remove container AND all data
 - To reach an Ollama running on the host, set `OLLAMA_BASE_URL=http://host.docker.internal:11434`.
 
 ---
+
+<a id="configuration"></a>
 
 ## 🔧 Configuration
 
@@ -305,6 +348,8 @@ All settings are environment variables or `.env` (full commented list in [`.env.
 > ⚠️ If you change `EMBEDDING_MODEL`, delete `DATA_DIR/chroma` and re-upload. Vectors from different models are not comparable.
 
 ---
+
+<a id="api"></a>
 
 ## 🔌 API
 
@@ -361,6 +406,8 @@ Errors always use one format: `{"error": {"code": "...", "message": "..."}}`, fo
 
 ---
 
+<a id="security"></a>
+
 ## 🛡️ Security
 
 | Area | Protection |
@@ -374,6 +421,8 @@ Errors always use one format: `{"error": {"code": "...", "message": "..."}}`, fo
 > ⚠️ **Residual risks:** no authentication or rate limiting yet, DNS rebinding between check and connect, prompt injection can still influence answers, and document/web/GitHub text is sent to the LLM provider. **Put the service behind a reverse proxy with authentication before exposing it.**
 
 ---
+
+<a id="verified"></a>
 
 ## ✅ What is verified and what is not
 
@@ -392,12 +441,25 @@ Errors always use one format: `{"error": {"code": "...", "message": "..."}}`, fo
 
 ---
 
+<a id="roadmap"></a>
+
 ## 🧭 Roadmap
 
 - [x] Main Agent + RAG agent + read-only GitHub agent
 - [x] Hybrid retrieval with citations
 - [x] Web page import with SSRF protection
 - [x] Docker Compose deployment
+- [ ] Real-model validation (OpenRouter / Ollama) and routing evaluation
+- [ ] Authentication and multi-tenant collections
+- [ ] Cross-encoder reranking
+- [ ] Streaming answers
+- [ ] OCR for scanned PDFs
+- [ ] Persisted BM25 index
+- [ ] Lockfile + CI
+- [ ] Repository indexing on the shared vector store
+- [ ] Unauthenticated public-repo reads via the GitHub REST API
+
+<a id="limitations"></a>
 
 <details>
 <summary><b>Known limitations</b></summary>
@@ -411,6 +473,8 @@ Errors always use one format: `{"error": {"code": "...", "message": "..."}}`, fo
 - Only direct dependencies are pinned; no lockfile yet
 
 </details>
+
+<a id="troubleshooting"></a>
 
 <details>
 <summary><b>Troubleshooting</b></summary>
@@ -430,6 +494,8 @@ Errors always use one format: `{"error": {"code": "...", "message": "..."}}`, fo
 
 ---
 
+<a id="structure"></a>
+
 ## 🗂️ Project structure
 
 ```text
@@ -445,15 +511,21 @@ TeamDocs-AI/
 └── requirements.txt · requirements-dev.txt · requirements-optional.txt
 ```
 
+<a id="tech-stack"></a>
+
 ## 🧰 Tech stack
 
 `Python 3.12` · `FastAPI` · `Uvicorn` · `LangChain` · `Deep Agents` · `GitHub MCP` · `ChromaDB` · `rank-bm25` · `sentence-transformers` · `pypdf` · `Unstructured` · `OpenRouter` · `Ollama` · `DeepEval` · `Docker` · vanilla JS frontend
 
 ---
 
+<a id="contributing"></a>
+
 ## 🤝 Contributing
 
 Issues and pull requests are welcome. Please run `ruff check src scripts` and the test suite before opening a PR.
+
+<a id="license"></a>
 
 ## 📄 License
 
@@ -463,7 +535,7 @@ No license has been chosen yet. Add a `LICENSE` file before publishing or accept
 
 <div align="center">
 
-**Built by [Hossein Heydari](https://github.com/HosseinHeydari2004)**
+**Built by [Hossein Heydari](https://github.com/HosseinHeydari2004) · [Nastaran Yavari](https://github.com/Nastaranyavari) · [Vexonova team](https://github.com/Vexonova-ai)**
 
 *If TeamDocs AI is useful to you, a ⭐ helps others find it.*
 
