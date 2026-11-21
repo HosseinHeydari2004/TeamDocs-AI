@@ -33,7 +33,7 @@
 10. [API](#api)
 11. [Security](#security)
 12. [What is verified and what is not](#verified)
-13. [RAG Evaluation Results](#RAG-Evaluation-Results)
+13. [RAG Evaluation Results](#evaluation)
 14. [Roadmap](#roadmap)
     - [Known limitations](#limitations)
     - [Troubleshooting](#troubleshooting)
