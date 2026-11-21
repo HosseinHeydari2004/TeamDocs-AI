@@ -33,12 +33,13 @@
 10. [API](#api)
 11. [Security](#security)
 12. [What is verified and what is not](#verified)
-13. [Roadmap](#roadmap)
+13. [RAG Evaluation Results](#RAG-Evaluation-Results)
+14. [Roadmap](#roadmap)
     - [Known limitations](#limitations)
     - [Troubleshooting](#troubleshooting)
-14. [Project structure](#structure)
-15. [Tech stack](#tech-stack)
-16. [Contributing](#contributing) · [License](#license)
+15. [Project structure](#structure)
+16. [Tech stack](#tech-stack)
+17. [Contributing](#contributing) · [License](#license)
 
 </details>
 
@@ -438,6 +439,37 @@ Errors always use one format: `{"error": {"code": "...", "message": "..."}}`, fo
 - Any real **OpenRouter** call or real **Ollama** model, so routing quality, tool-calling reliability of small models, answer quality and real latency are unmeasured
 - The GitHub agent against real github.com with a valid token (GraphQL-backed tools such as `list_issues` and PR reads)
 - The real `BAAI/bge-small-en-v1.5` runtime, the Docker image build, Windows execution, a real-browser visual check, `PDF_BACKEND=unstructured`
+
+---
+
+<a id="evaluation"></a>
+
+## 📊 RAG Evaluation Results
+
+Evaluated with **DeepEval** on a 40-question test set (retrieval mode `hybrid`, `top_k = 5`, all retrieval tools enabled). The judge model was local `qwen2.5:7b-instruct-q4_K_M` (run on 2026-11-16, about 1070 s).
+
+| Metric                   | Mean  | Valid samples |
+| ------------------------ | ----- | ------------- |
+| Faithfulness             | 0.741 | 39 / 40       |
+| Answer Relevancy         | 0.777 | 39 / 40       |
+| Contextual Precision     | 0.679 | 40 / 40       |
+| Contextual Recall        | 0.558 | 40 / 40       |
+| Contextual Relevancy     | 0.142 | 40 / 40       |
+
+**Overall pass rate: 2.5% (1 of 40 test cases passed all five metrics).**
+
+**How to read these numbers**
+
+- **Generation is the stronger side.** Faithfulness (0.74) and Answer Relevancy (0.78) are reasonable: most answers stay grounded in the retrieved text and address the question.
+- **Retrieval is the weak side.** Contextual Recall (0.56) shows that for many questions the retrieved chunks do not cover the reference answer. Contextual Relevancy (0.14) is very low: with `top_k = 5`, only a small part of each retrieved chunk set is relevant to the question.
+- **Missing context in 4 cases.** For questions 19, 31, 34 and 35 no retrieved context was captured, so retrieval-based metrics for them score 0 and one of them (question 34) has no faithfulness / relevancy score.
+- **The test set mixes question types.** It includes out-of-scope questions (e.g. vacation policy, CEO, salary) and yes/no trick questions on purpose, so a low pass rate is partly expected.
+
+**Caveats**
+
+- The judge is a small local 7B model; LLM-as-judge scores from such models are noisy and strict, and may differ from a stronger judge.
+- The run uses the default DeepEval pass threshold, and a test case passes only if every metric passes.
+- Raw outputs and per-question scores with the judge's reasons are in `evaluation_results/` (`rag_outputs.csv`, `deepeval_detailed_results.csv`, `deepeval_summary.json`).
 
 ---
 
